@@ -19,28 +19,18 @@ struct Particle{
 	float3 vel; 
 };
 
-
-__device__ 
-void pos_update(Particle* p, float dt){ 
-    const unsigned int tid = blockDim.x*blockIdx.x + threadIdx.x;  
-    if(tid >= num_particles){ 
-    	return; 
-    }
-    p[tid].pos+=p[tid].vel*dt; 
-}
-
 __global__
-void update(Particle* p, float dt){
+void update(Particle* p, float dt, int stream){
 	const unsigned int tid = blockDim.x*blockIdx.x + threadIdx.x;  
-    if(tid >= num_particles){ 
+    if(tid >= num_particles/num_streams){ 
     	return; 
     } 
+    int id = tid+(num_particles/num_streams)*stream;
+  //p-update
+	p[id].pos+=p[id].vel*dt; 
 
-    //p-update
-	p[tid].pos+=p[tid].vel*dt; 
-
-	//v-update, 1% slowdown per dt
-	p[tid].vel=p[tid].vel*dt*0.99; 
+	//v-update, 50% slowdown per dt
+	p[id].vel=p[id].vel*dt*0.50; 
 } 
 
 void cpu_update(Particle* p, float dt){
@@ -49,14 +39,19 @@ void cpu_update(Particle* p, float dt){
 	    //p-update
 		p[i].pos+=p[i].vel*dt; 
 
-		//v-update, 1% slowdown per dt
-		p[i].vel=p[i].vel*dt*0.99; 
+		//v-update, 50% slowdown per dt
+		p[i].vel=p[i].vel*dt*0.50; 
 	} 
 }
 
 
 int main(){
 	//generate random velocities & positions
+	if(num_particles%num_streams!=0){
+		printf("Unsupported number of streams, exiting"); 
+		return 1; 
+	}
+
 	Particle* pm; 
 	cudaMallocHost(&pm, num_particles*sizeof(Particle), cudaHostAllocDefault);
 
@@ -85,21 +80,28 @@ int main(){
 	printf("Starting! sum is:%f \n", sum); 
 
 
+
 	iStart = cpuSecond();
 	for(int i=0; i<num_iterations; ++i){
-		for(int s=0; s<num_streams; ++s)
-			cudaMemcpyAsync( (void*)d_pv, pm, num_particles*sizeof(Particle), cudaMemcpyHostToDevice, streams[s] ); 
-		for(int s=0; s<num_streams; ++s)
-			update<<<num_blocks, num_threads, 0, streams[s]>>>(d_pv, 1.0f); 
-		for(int s=0; s<num_streams; ++s)
-			cudaMemcpyAsync(pm, (void*)d_pv, num_particles*sizeof(Particle), cudaMemcpyDeviceToHost, streams[s] ); 
-			cudaDeviceSynchronize();
+		for(int s=0; s<num_streams; ++s){
+			int offset = s*(num_particles/num_streams); 
+			cudaMemcpyAsync((void*)(d_pv+offset), (void*)(pm+offset), (num_particles/num_streams)*sizeof(Particle), cudaMemcpyHostToDevice, streams[s] ); 
+		}
+		for(int s=0; s<num_streams; ++s){
+			update<<<num_blocks/num_streams, num_threads, 0, streams[s]>>>(d_pv, 1.0f, s); 
+		}
+		for(int s=0; s<num_streams; ++s){
+			int offset = s*(num_particles/num_streams); 
+			cudaMemcpyAsync((void*)(pm+offset), (void*)(d_pv+offset), (num_particles/num_streams)*sizeof(Particle), cudaMemcpyDeviceToHost, streams[s] ); 
+		}
+		cudaDeviceSynchronize();
 		
-		sum=0; 
+		/*sum=0; 
 		for(int p=0; p<num_particles; ++p){
 			sum+=pm[p].vel.x; 
 		}
 		printf("sum:%d\t was:%f \n",i, sum); 
+		*/
 	}
 	iElaps = cpuSecond() - iStart;
 
