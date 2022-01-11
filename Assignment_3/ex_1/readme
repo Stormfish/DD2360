@@ -1,0 +1,2 @@
+compiled and ran with
+nvcc ex_1.cu -std=c++14 -arch=sm_61 -o ex_1 -O3 && ./ex_1 images/hw3.bmp

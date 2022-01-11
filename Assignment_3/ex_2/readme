@@ -1,0 +1,2 @@
+compiled and ran with
+nvcc exercise_2a.cu -std=c++14 -arch=sm_61 -o ex_2 -O3 && ./ex_2

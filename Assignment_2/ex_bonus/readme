@@ -1,0 +1,2 @@
+compiled and ran with 
+nvcc exercise_bonus.cu -std=c++14 -arch=sm_61 -O3 -o ex_bonus && ./ex_bonus

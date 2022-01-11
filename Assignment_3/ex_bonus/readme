@@ -1,0 +1,3 @@
+compiled and ran with:
+nvcc exercise_bonus.cu -std=c++14 -arch=sm_61 -O3 -o bonus -lcurand -lcublas && ./bonus -v -s 4096
+for a 4096x4096 matrix
