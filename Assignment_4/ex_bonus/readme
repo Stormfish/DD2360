@@ -1,0 +1,2 @@
+built and ran with:
+g++ exercise_bonus.cpp -lOpenCL -o ex_bonus -O2 -Wall -g && ./ex_bonus

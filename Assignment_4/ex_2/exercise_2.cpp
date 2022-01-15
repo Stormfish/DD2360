@@ -17,7 +17,8 @@ const char *saxpy_program =
 "                __global float *Y)             \n"
 "{                                              \n"
 "    int index = get_global_id(0);              \n"
-"    Y[index] = a*X[index] + Y[index];          \n"
+"    if(index<size)              \n"
+"     Y[index] = a*X[index] + Y[index];          \n"
 "  //  printf(\"Hello World! My threadId is:%d \\n \", index); \n"
 "}                                              \n";
 

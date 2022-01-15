@@ -1,26 +1,12 @@
 #include <iostream>
 #include <vector>
+#include <getopt.h>
+
 #include "utils.h"
-constexpr int size = 400000000; 
+int size = 4000000; 
 
 using std::vector;
-/*void matMulAcc(float *P, const float* M, const float* N, int Mh, int Mw, int Nw){
-	
 
-	#pragma acc parallel loop copyin(M[0:Mh*Mw]) copyin(N[0:Nw*Mw]) copyout(P[0:Mh*Nw])
-	for(int i=0; i<Mh; ++i){
-		#pragma acc loop
-		for(int j=0; j<Nw; ++j){
-			float sum=0.0; 
-			for(int k=0; k<Mw; ++k){
-				float a = M[i*Mw+k]; 
-				float b = N[k*Nw+j]; 
-				sum += a*b; 
-			}
-			P[i*Nw+j] = sum; 
-		}
-	}
-}*/
 
 void cpu_saxpy(int size, float a, float* X, float* Y){
     for(int i=0; i<size; ++i){ 
@@ -38,7 +24,18 @@ void acc_saxpy(float* res, int size, float a, float* X, float* Y){
 
 
 
-int main(){
+int main(int argc, char *argv[]) {
+	int opt;
+	while ((opt = getopt(argc, argv, "s:")) != -1) {
+		switch (opt) {
+			case 's':
+				size = atoi(optarg);
+				break; 
+			default:
+				printf("invalid options, exiting"); 
+				exit(1);
+		}
+	}
 
 	
   	float a;// X[size], Y[size];
@@ -52,8 +49,8 @@ int main(){
 	printf("Computing SAXPY on with acc…:"); 
 	double iStart = cpuSecond();
     acc_saxpy(res.data(), size, a, X.data(), Y.data()); 
-	double iElaps = cpuSecond() - iStart;
-	printf("Done! in:%fs \n", iElaps); 
+	double accElaps = cpuSecond() - iStart;
+	printf("Done! in:%fs \n", accElaps); 
 
 
   	vector<float> cX(size);
@@ -64,9 +61,10 @@ int main(){
    	printf("Computing SAXPY on the cpu…:"); 
 	iStart = cpuSecond();
     cpu_saxpy(size, a, cX.data(), cY.data()); 
-	iElaps = cpuSecond() - iStart;
-	printf("Done! in:%fs \n", iElaps); 
+	double cElaps = cpuSecond() - iStart;
+	printf("Done! in:%fs \n", cElaps); 
 
+	a=0; 
     bool correct = true; 
     for(int i=0; i<size; ++i){
     	if(cY[i]!=res[i]){
@@ -80,6 +78,8 @@ int main(){
     if(correct){
     	printf("\nverification passed!\n"); 
     }
+
+    printf("%f\t%f\n", accElaps, cElaps); 
 
 
 	return 0; 

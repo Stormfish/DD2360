@@ -147,9 +147,9 @@ void shared_sgemm_kernel(float *C, float *A, float *B, long size)
 	
 			#pragma unroll
 			for (long k = 0; k < TILE_SIZE; ++k) {
-            		val += tile_A[threadIdx.y][k]*tile_B[k][threadIdx.x];				
-		}	
-		__syncthreads();
+            			val += tile_A[threadIdx.y][k]*tile_B[k][threadIdx.x];				
+			}	
+			__syncthreads();
 		}
 		C[local_row * size + local_col] = val;
 	}

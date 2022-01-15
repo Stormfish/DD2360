@@ -1,0 +1,2 @@
+built and ran with: 
+pgc++ -acc -Minfo -gpu=cc61 exercise_3.cpp -Wall -g -O3 -o ex_3 && ./ex_3

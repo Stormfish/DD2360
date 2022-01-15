@@ -1,0 +1,2 @@
+Compiled and ran with
+pgc++ exercise_1.cpp -lOpenCL -o ex_1 -O2 -Wall -g && ./ex_1

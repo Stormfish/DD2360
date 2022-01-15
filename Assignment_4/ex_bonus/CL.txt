@@ -1,0 +1,33 @@
+typedef struct __attribute__ ((packed)) _st_foo
+{
+	float x,y,z, vx,vy,vz; 
+};
+
+__kernel
+void update(Particle* p, float dt, int num_particles){
+	const unsigned int tid = get_global_id(0);  
+    if(tid >= num_particles){ 
+    	return; 
+    } 
+
+    //p-update
+	p[tid].pos+=p[tid].vel*dt; 
+
+	//v-update, 50% slowdown per dt
+	p[tid].vel=p[tid].vel*dt*0.50; 
+} 
+
+/*
+const char *saxpy_program =
+"__kernel                                       \n"
+"void saxpy    (           int size,             \n"
+"                         float a,              \n"
+"                __global float *X,             \n"
+"                __global float *Y)             \n"
+"{                                              \n"
+"    int index = get_global_id(0);              \n"
+"    if(index<size)              \n"
+"     Y[index] = a*X[index] + Y[index];          \n"
+"  //  printf(\"Hello World! My threadId is:%d \\n \", index); \n"
+"} 
+*/
